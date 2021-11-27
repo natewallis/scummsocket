@@ -29,7 +29,6 @@ defmodule ScummIndex do
       room_name = assets_file_pointer
       |> IO.binread(9)
       |> Helpers.xor(0xFF)
-      |> String.trim
 
       Map.put(acc, room_name, room_number)
 

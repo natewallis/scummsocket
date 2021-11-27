@@ -7,13 +7,6 @@ defmodule Helpers do
   end
 
   def xor(binary, byte) when is_binary(binary) and byte in 0..255 do
-    for <<b <- binary>>, into: <<>> do
-      byte = Bitwise.bxor(b, byte)
-      if byte !== 0 do
-        <<byte>>
-      else
-        <<32>>
-      end
-    end
+    for <<b <- binary>>, b != 0xFF, into: <<>>, do: <<Bitwise.bxor(b, byte)>>
   end
 end
