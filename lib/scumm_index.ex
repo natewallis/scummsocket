@@ -1,14 +1,45 @@
-# Read the first 4 bytes
-# Reverse to determine the block size
-# Subtract 7 from the block size and divide by 10 to get the number of rooms
-# Start reading in 10 byte chunks to extract the room number and room name
-# return map in the following structure
-#
-# %{
-#   50 => "crabshack",
-#   99 => "copycrap",
-#   "crabshack" => 50,
-#   "copycrap" => 99
-# }
-#
-# The data is stored twice as I expect we will need to lookup data in both directions at some point
+defmodule ScummIndex do
+
+  def parse do
+
+    assets_file = File.open!("assets/000.lfl")
+
+    block_size = assets_file
+    |> IO.binread(4)
+    |> Helpers.reverse_binary()
+    |> :binary.decode_unsigned()
+
+    block_type = assets_file
+    |> IO.binread(2)
+
+    {_, _} = parse_block(block_type, block_size, assets_file)
+
+  end
+
+  def parse_block("RN", block_size, assets_file_pointer) do
+
+    number_of_rooms = (block_size - 7) / 10 |> trunc
+
+    room_data = Enum.reduce(1..number_of_rooms, %{}, fn(_, acc) ->
+
+      room_number = assets_file_pointer
+      |> IO.binread(1)
+      |> :binary.decode_unsigned
+
+      room_name = assets_file_pointer
+      |> IO.binread(9)
+      |> Helpers.xor(0xFF)
+      |> String.trim
+
+      Map.put(acc, room_name, room_number)
+
+    end)
+
+    #Discard the end of block null pointer
+    IO.binread(1)
+
+    {assets_file_pointer, room_data}
+
+  end
+
+end
