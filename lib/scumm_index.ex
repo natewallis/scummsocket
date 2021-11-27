@@ -4,8 +4,11 @@ defmodule ScummIndex do
 
     assets_file_pointer = File.open!("assets/000.lfl")
     block_meta_data = parse_block(assets_file_pointer)
-    block_data = parse_block(block_meta_data, assets_file_pointer)
-    IO.inspect block_data
+
+    index_data = %{}
+    {_assets_file_pointer, block_data} = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_data)
+    IO.inspect index_data
 
   end
 
@@ -39,13 +42,14 @@ defmodule ScummIndex do
       |> Helpers.xor(0xFF)
 
       Map.put(acc, room_name, room_number)
+      Map.put(acc, room_number, room_name)
 
     end)
 
     #Discard the end of block null pointer
     IO.binread(1)
 
-    {assets_file_pointer, room_data}
+    {assets_file_pointer, %{"rooms" => room_data} }
 
   end
 
