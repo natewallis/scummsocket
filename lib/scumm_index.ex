@@ -2,13 +2,16 @@ defmodule ScummIndex do
 
   def parse do
 
-    assets_file_pointer = File.open!("assets/000.lfl")
-    block_meta_data = parse_block(assets_file_pointer)
-
     index_data = %{}
-    {_assets_file_pointer, block_data} = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_data)
-    IO.inspect index_data
+    assets_file_pointer = File.open!("assets/000.lfl")
+
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
 
   end
 
@@ -28,6 +31,10 @@ defmodule ScummIndex do
 
   def parse_block( {block_size, "RN"} , assets_file_pointer) do
 
+    # block data includes block size of 4 bytes, block type of 2 bytes and trailing null byte
+    # so 7 bytes in total, each room is 10 bytes in size.  This does not currently account fo
+    # a corrupt disk image
+
     number_of_rooms = (block_size - 7) / 10
     |> trunc
 
@@ -46,10 +53,23 @@ defmodule ScummIndex do
 
     end)
 
-    #Discard the end of block null pointer
-    IO.binread(1)
+    # discard end of block null byte
+    #IO.binread(1)
 
-    {assets_file_pointer, %{"rooms" => room_data} }
+    %{"rooms" => room_data}
+
+  end
+
+  def parse_block( {block_size, "0R"} , _assets_file_pointer) do
+
+    number_of_entries = (block_size - 8) / 5
+    |> trunc
+
+    room_directory_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
+      Map.put(acc, "dummy", "data")
+    end)
+
+    %{"room_directory" => room_directory_data}
 
   end
 
