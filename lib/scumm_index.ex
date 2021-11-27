@@ -13,6 +13,10 @@ defmodule ScummIndex do
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+
   end
 
   def parse_block(assets_file_pointer) do
@@ -54,19 +58,70 @@ defmodule ScummIndex do
     end)
 
     # discard end of block null byte
-    #IO.binread(1)
+    :file.position(assets_file_pointer, block_size)
 
     %{"rooms" => room_data}
 
   end
 
-  def parse_block( {block_size, "0R"} , _assets_file_pointer) do
+  def parse_block( {block_size, "0S"} , assets_file_pointer) do
 
     number_of_entries = (block_size - 8) / 5
     |> trunc
 
+    _number_of_items = assets_file_pointer
+    |> IO.binread(2)
+    |> :binary.decode_unsigned
+    |> IO.puts
+
+    IO.puts "number of items 0S ^^^"
+
     room_directory_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
+
+      file_number = assets_file_pointer
+      |> IO.binread(1)
+      |> :binary.decode_unsigned
+
+      offset = assets_file_pointer
+      |> IO.binread(4)
+      |> :binary.decode_unsigned
+
+      IO.puts "#{file_number} => #{offset}"
+
       Map.put(acc, "dummy", "data")
+
+    end)
+
+    %{"scripts_data" => room_directory_data}
+
+  end
+
+  def parse_block( {block_size, "0R"} , assets_file_pointer) do
+
+    number_of_entries = (block_size - 8) / 5
+    |> trunc
+
+    _number_of_items = assets_file_pointer
+    |> IO.binread(2)
+    |> :binary.decode_unsigned
+    |> IO.puts
+
+    IO.puts "number of items 0R ^^^"
+
+    room_directory_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
+
+      file_number = assets_file_pointer
+      |> IO.binread(1)
+      |> :binary.decode_unsigned
+
+      offset = assets_file_pointer
+      |> IO.binread(4)
+      |> :binary.decode_unsigned
+
+      IO.puts "#{file_number} => #{offset}"
+
+      Map.put(acc, "dummy", "data")
+
     end)
 
     %{"room_directory" => room_directory_data}
