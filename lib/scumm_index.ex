@@ -2,23 +2,31 @@ defmodule ScummIndex do
 
   def parse do
 
-    assets_file = File.open!("assets/000.lfl")
+    assets_file_pointer = File.open!("assets/000.lfl")
+    block_meta_data = parse_block(assets_file_pointer)
+    block_data = parse_block(block_meta_data, assets_file_pointer)
+    IO.inspect block_data
 
-    block_size = assets_file
+  end
+
+  def parse_block(assets_file_pointer) do
+
+    block_size = assets_file_pointer
     |> IO.binread(4)
     |> Helpers.reverse_binary()
     |> :binary.decode_unsigned()
 
-    block_type = assets_file
+    block_type = assets_file_pointer
     |> IO.binread(2)
 
-    {_, _} = parse_block(block_type, block_size, assets_file)
+    {block_size, block_type}
 
   end
 
-  def parse_block("RN", block_size, assets_file_pointer) do
+  def parse_block( {block_size, "RN"} , assets_file_pointer) do
 
-    number_of_rooms = (block_size - 7) / 10 |> trunc
+    number_of_rooms = (block_size - 7) / 10
+    |> trunc
 
     room_data = Enum.reduce(1..number_of_rooms, %{}, fn(_, acc) ->
 

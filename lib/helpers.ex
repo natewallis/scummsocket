@@ -9,4 +9,5 @@ defmodule Helpers do
   def xor(binary, byte) when is_binary(binary) and byte in 0..255 do
     for <<b <- binary>>, b != 0xFF, into: <<>>, do: <<Bitwise.bxor(b, byte)>>
   end
+
 end
