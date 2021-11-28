@@ -1,9 +1,19 @@
 defmodule ScummIndex do
 
+  defguard basic_block_type(value) when value === "0R" or value === "0S" or value === "0N" or value === "0C"
+
   def parse do
 
     index_data = %{}
     assets_file_pointer = File.open!("assets/000.lfl")
+
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
 
     block_meta_data = parse_block(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
@@ -23,8 +33,8 @@ defmodule ScummIndex do
 
     block_size = assets_file_pointer
     |> IO.binread(4)
-    |> Helpers.reverse_binary()
-    |> :binary.decode_unsigned()
+    |> Helpers.reverse_binary
+    |> :binary.decode_unsigned
 
     block_type = assets_file_pointer
     |> IO.binread(2)
@@ -64,26 +74,28 @@ defmodule ScummIndex do
 
   end
 
-  def parse_block( {block_size, "0S"} , assets_file_pointer) do
+  def parse_block( {block_size, block_type} , assets_file_pointer) when basic_block_type(block_type) do
 
     number_of_entries = (block_size - 8) / 5
     |> trunc
 
-    _number_of_items = assets_file_pointer
+    number_of_items = assets_file_pointer
     |> IO.binread(2)
+    |> Helpers.reverse_binary
     |> :binary.decode_unsigned
-    |> IO.puts
 
-    IO.puts "number of items 0S ^^^"
+    IO.puts "#{block_type} number of items: #{number_of_items} ^^^"
 
-    room_directory_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
+    block_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
 
       file_number = assets_file_pointer
       |> IO.binread(1)
+      |> Helpers.reverse_binary
       |> :binary.decode_unsigned
 
       offset = assets_file_pointer
       |> IO.binread(4)
+      |> Helpers.reverse_binary
       |> :binary.decode_unsigned
 
       IO.puts "#{file_number} => #{offset}"
@@ -92,11 +104,11 @@ defmodule ScummIndex do
 
     end)
 
-    %{"scripts_data" => room_directory_data}
+    %{"scripts_data" => block_data}
 
   end
 
-  def parse_block( {block_size, "0R"} , assets_file_pointer) do
+  def parse_block( {block_size, "0O"} , assets_file_pointer) do
 
     number_of_entries = (block_size - 8) / 5
     |> trunc
@@ -106,25 +118,31 @@ defmodule ScummIndex do
     |> :binary.decode_unsigned
     |> IO.puts
 
-    IO.puts "number of items 0R ^^^"
+    IO.puts "number of items 0O ^^^"
 
-    room_directory_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
+    block_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
 
-      file_number = assets_file_pointer
+      class_data = assets_file_pointer
+      |> IO.binread(3)
+      |> Helpers.reverse_binary
+      |> :binary.decode_unsigned
+
+      owner_state = assets_file_pointer
       |> IO.binread(1)
-      |> :binary.decode_unsigned
 
-      offset = assets_file_pointer
-      |> IO.binread(4)
-      |> :binary.decode_unsigned
+      owner = owner_state
+      |> Bitwise.band(0xF0)
+      |> Bitwise.>>> (4)
 
-      IO.puts "#{file_number} => #{offset}"
+      state = Bitwise.band(owner_state, 0x0F)
+
+      IO.puts "Class: #{class_data},  owner: #{owner}, state: #{state}"
 
       Map.put(acc, "dummy", "data")
 
     end)
 
-    %{"room_directory" => room_directory_data}
+    %{"room_directory" => block_data}
 
   end
 
