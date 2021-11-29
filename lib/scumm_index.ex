@@ -27,6 +27,10 @@ defmodule ScummIndex do
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+
   end
 
   def parse_block(assets_file_pointer) do
@@ -113,32 +117,31 @@ defmodule ScummIndex do
     number_of_entries = (block_size - 8) / 5
     |> trunc
 
-    _number_of_items = assets_file_pointer
+    number_of_items = assets_file_pointer
     |> IO.binread(2)
+    |> Helpers.reverse_binary
     |> :binary.decode_unsigned
-    |> IO.puts
 
-    IO.puts "number of items 0O ^^^"
+    IO.puts "Number of items in room directory: #{number_of_items} ^^^"
 
     block_data = Enum.reduce(1..number_of_entries, %{}, fn(_, acc) ->
 
       class_data = assets_file_pointer
       |> IO.binread(3)
-      |> Helpers.reverse_binary
+      #|> Helpers.reverse_binary
       |> :binary.decode_unsigned
 
       owner_state = assets_file_pointer
       |> IO.binread(1)
+      |> :binary.decode_unsigned
 
       owner = owner_state
       |> Bitwise.band(0xF0)
-      |> Bitwise.>>> (4)
+      |> Bitwise.>>>(4)
 
       state = Bitwise.band(owner_state, 0x0F)
 
-      IO.puts "Class: #{class_data},  owner: #{owner}, state: #{state}"
-
-      Map.put(acc, "dummy", "data")
+      Map.put(acc, class_data, %{owner: owner, state: state})
 
     end)
 
