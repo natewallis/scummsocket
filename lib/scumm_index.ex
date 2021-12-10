@@ -1,50 +1,28 @@
 defmodule ScummIndex do
 
-  defguard basic_block_type(value) when value === "0R" or value === "0S" or value === "0N" or value === "0C"
+  defguard common_block_type(value) when value === "0R" or value === "0S" or value === "0N" or value === "0C"
 
   def parse do
 
     index_data = %{}
     assets_file_pointer = File.open!("assets/000.lfl")
+    #parse_block(assets_file_pointer)
 
     block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    index_data = Map.merge(index_data, block_contents)
+    Map.merge(index_data, block_contents)
 
   end
 
   def get_block_meta_data(assets_file_pointer) do
-
-    block_size = assets_file_pointer
-    |> IO.binread(4)
-    |> Helpers.reverse_binary
-    |> :binary.decode_unsigned
-
-    block_type = assets_file_pointer
-    |> IO.binread(2)
-
+    block_size = Helpers.binread_reverse_decode(assets_file_pointer,4)
+    block_type = IO.binread(assets_file_pointer,2)
     {block_size, block_type}
+  end
 
+  def parse_block(assets_file_pointer) do
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    parse_block(block_meta_data, assets_file_pointer)
   end
 
   def parse_block( {block_size, "RN"} , assets_file_pointer) do
@@ -58,9 +36,7 @@ defmodule ScummIndex do
 
     room_data = Enum.reduce(1..number_of_rooms, %{}, fn(_, acc) ->
 
-      room_number = assets_file_pointer
-      |> IO.binread(1)
-      |> :binary.decode_unsigned
+      room_number = Helpers.binread_decode(assets_file_pointer,1)
 
       room_name = assets_file_pointer
       |> IO.binread(9)
@@ -78,25 +54,14 @@ defmodule ScummIndex do
 
   end
 
-  def parse_block( {block_size, block_type} , assets_file_pointer) when basic_block_type(block_type) do
+  def parse_block( { _, block_type} , assets_file_pointer) when common_block_type(block_type) do
 
-    number_of_items = assets_file_pointer
-    |> IO.binread(2)
-    |> Helpers.reverse_binary
-    |> :binary.decode_unsigned
+    number_of_items = Helpers.binread_reverse_decode(assets_file_pointer,2)
 
     block_data = Enum.reduce(1..number_of_items, %{}, fn(_, acc) ->
 
-      file_number = assets_file_pointer
-      |> IO.binread(1)
-      |> Helpers.reverse_binary
-      |> :binary.decode_unsigned
-
-      offset = assets_file_pointer
-      |> IO.binread(4)
-      |> Helpers.reverse_binary
-      |> :binary.decode_unsigned
-
+      file_number = Helpers.binread_reverse_decode(assets_file_pointer,1)
+      offset = Helpers.binread_reverse_decode(assets_file_pointer,4)
       Map.put(acc, file_number, offset)
 
     end)
@@ -105,24 +70,16 @@ defmodule ScummIndex do
 
   end
 
-  def parse_block( {block_size, "0O"} , assets_file_pointer) do
+  def parse_block( {_, "0O"} , assets_file_pointer) do
 
-    number_of_items = assets_file_pointer
-    |> IO.binread(2)
-    |> Helpers.reverse_binary
-    |> :binary.decode_unsigned
+    number_of_items = Helpers.binread_reverse_decode(assets_file_pointer,2)
 
     block_data = Enum.reduce(1..number_of_items, %{}, fn(_, acc) ->
 
-      class_data = assets_file_pointer
-      |> IO.binread(3)
-      #|> Helpers.reverse_binary
-      |> :binary.decode_unsigned
+      class_data = Helpers.binread_decode(assets_file_pointer,3)
+      owner_state = Helpers.binread_decode(assets_file_pointer,1)
 
-      owner_state = assets_file_pointer
-      |> IO.binread(1)
-      |> :binary.decode_unsigned
-
+      #extract the 4 bits for state and owner
       owner = owner_state
       |> Bitwise.band(0xF0)
       |> Bitwise.>>>(4)
