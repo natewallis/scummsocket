@@ -7,35 +7,33 @@ defmodule ScummIndex do
     index_data = %{}
     assets_file_pointer = File.open!("assets/000.lfl")
 
-    block_meta_data = parse_block(assets_file_pointer)
+    block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
-    block_meta_data = parse_block(assets_file_pointer)
+    block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
-    block_meta_data = parse_block(assets_file_pointer)
+    block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
-    block_meta_data = parse_block(assets_file_pointer)
+    block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
-    block_meta_data = parse_block(assets_file_pointer)
+    block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
 
-    block_meta_data = parse_block(assets_file_pointer)
+    block_meta_data = get_block_meta_data(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
-
-    IO.binread(assets_file_pointer, 10)
 
   end
 
-  def parse_block(assets_file_pointer) do
+  def get_block_meta_data(assets_file_pointer) do
 
     block_size = assets_file_pointer
     |> IO.binread(4)
