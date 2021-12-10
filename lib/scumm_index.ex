@@ -31,8 +31,7 @@ defmodule ScummIndex do
     # so 7 bytes in total, each room is 10 bytes in size.  This does not currently account fo
     # a corrupt disk image
 
-    number_of_rooms = (block_size - 7) / 10
-    |> trunc
+    number_of_rooms = trunc( (block_size - 7) / 10 )
 
     room_data = Enum.reduce(1..number_of_rooms, %{}, fn(_, acc) ->
 
