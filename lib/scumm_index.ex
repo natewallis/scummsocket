@@ -12,9 +12,37 @@ defmodule ScummIndex do
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     Map.merge(index_data, block_contents)
 
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    Map.merge(index_data, block_contents)
+
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    Map.merge(index_data, block_contents)
+
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    Map.merge(index_data, block_contents)
+
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    Map.merge(index_data, block_contents)
+
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    Map.merge(index_data, block_contents)
+
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    Map.merge(index_data, block_contents)
+
   end
 
   def get_block_meta_data(assets_file_pointer) do
+
+#get bytes before passing to helper functions to determine eof for recursive base case
+#https://inquisitivedeveloper.com/lwm-elixir-73/
+
     block_size = Helpers.binread_reverse_decode(assets_file_pointer,4)
     block_type = IO.binread(assets_file_pointer,2)
     {block_size, block_type}
