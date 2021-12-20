@@ -3,15 +3,15 @@ defmodule ScummIndex do
   defguard common_block_type(value) when value === "0R" or value === "0S" or value === "0N" or value === "0C"
 
   def parse do
-    assets_file_pointer = File.open!("assets/000.lfl")
-    |> read_block
+    File.open!("assets/000.lfl")
+    |> find_a_block
   end
 
   #performs recursive block parsing until :eof is hit
-  def read_block(assets_file_pointer) do
+  def find_a_block(assets_file_pointer) do
     block_meta_data = get_block_meta_data(assets_file_pointer)
     parse_block(block_meta_data, assets_file_pointer)
-    read_block(assets_file_pointer)
+    find_a_block(assets_file_pointer)
   end
 
   defp get_block_meta_data(assets_file_pointer) do
