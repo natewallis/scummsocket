@@ -3,54 +3,21 @@ defmodule ScummIndex do
   defguard common_block_type(value) when value === "0R" or value === "0S" or value === "0N" or value === "0C"
 
   def parse do
-
-    index_data = %{}
     assets_file_pointer = File.open!("assets/000.lfl")
-    #parse_block(assets_file_pointer)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    block_contents = parse_block(block_meta_data, assets_file_pointer)
-    Map.merge(index_data, block_contents)
-
+    |> read_block
   end
 
-  def get_block_meta_data(assets_file_pointer) do
+  #performs recursive block parsing until :eof is hit
+  def read_block(assets_file_pointer) do
+    block_meta_data = get_block_meta_data(assets_file_pointer)
+    parse_block(block_meta_data, assets_file_pointer)
+    read_block(assets_file_pointer)
+  end
 
-#get bytes before passing to helper functions to determine eof for recursive base case
-#https://inquisitivedeveloper.com/lwm-elixir-73/
-
+  defp get_block_meta_data(assets_file_pointer) do
     block_size = Helpers.binread_reverse_decode(assets_file_pointer,4)
     block_type = IO.binread(assets_file_pointer,2)
     {block_size, block_type}
-  end
-
-  def parse_block(assets_file_pointer) do
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    parse_block(block_meta_data, assets_file_pointer)
   end
 
   def parse_block( {block_size, "RN"} , assets_file_pointer) do
