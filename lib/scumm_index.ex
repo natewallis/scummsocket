@@ -4,14 +4,23 @@ defmodule ScummIndex do
 
   def parse do
     File.open!("assets/000.lfl")
-    |> find_a_block
+    |> find_a_block(%{})
   end
 
-  #performs recursive block parsing until :eof is hit
-  def find_a_block(assets_file_pointer) do
-    block_meta_data = get_block_meta_data(assets_file_pointer)
-    parse_block(block_meta_data, assets_file_pointer)
-    find_a_block(assets_file_pointer)
+
+  def find_a_block(assets_file_pointer, data_store) do
+
+    {:ok, current_cursor_position} = :file.position(assets_file_pointer, :cur)
+    %File.Stat{size: size} = File.stat!("assets/000.lfl")
+
+    if (current_cursor_position < size) do
+      block_meta_data = get_block_meta_data(assets_file_pointer)
+      data_store = Map.merge(data_store, parse_block(block_meta_data, assets_file_pointer))
+      find_a_block(assets_file_pointer,data_store)
+    else
+      data_store
+    end
+
   end
 
   defp get_block_meta_data(assets_file_pointer) do
@@ -23,7 +32,7 @@ defmodule ScummIndex do
   def parse_block( {block_size, "RN"} , assets_file_pointer) do
 
     # block data includes block size of 4 bytes, block type of 2 bytes and trailing null byte
-    # so 7 bytes in total, each room is 10 bytes in size.  This does not currently account fo
+    # so 7 bytes in total, each room is 10 bytes in size.  This does not currently account for
     # a corrupt disk image
 
     number_of_rooms = trunc( (block_size - 7) / 10 )
