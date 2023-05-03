@@ -1,6 +1,10 @@
 # Engine
 
-A Scumm file format parser written in Elixir for future consumption by UI
+A Scumm file format parser written in Elixir for future consumption by client.   
+
+The goal is have have Monkey Island playable via a browser.
+
+Another possibility would be to write a text client to interact with the engine.
 
 ## Standalone
 
