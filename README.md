@@ -4,8 +4,10 @@ A Scumm file format parser written in Elixir for future consumption by UI
 
 ## Standalone
 
-`iex -S mix`
-`ScummIndex.parse`
+```
+iex -S mix
+ScummIndex.parse
+```
 
 Currently this will output a map of the file positions to retrieve assets from, no decoding of assets currently takes place or joins the dots into making it a playable game
 
