@@ -1,6 +1,6 @@
 # Engine
 
-**TODO: Add description**
+A Scumm engine written in Elixir
 
 ## Installation
 
