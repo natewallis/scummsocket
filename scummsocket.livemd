@@ -1,0 +1,363 @@
+<!-- livebook:{"file_entries":[{"name":"byte_sequence.png","type":"attachment"},{"name":"cover_image.png","type":"attachment"}]} -->
+
+# ScummSocket™
+
+```elixir
+Mix.install(
+  [
+    {:engine, path: Path.join(__DIR__, "."), env: :dev}
+  ],
+  config_path: :engine
+)
+```
+
+## Project Overview
+
+![](files/cover_image.png)
+
+<!-- livebook:{"break_markdown":true} -->
+
+I love coding in Elixir. I also love Monkey Island. A game that I have very fond memories of from my childhood. I want to bring Guybrush into the era of the Internet. Why? So I can learn more about Elixir… what better way to learn more about a language by getting it to decode the disk images of a game you love!
+
+**Hold on, aren’t there tools that already do this?**
+
+Yes, of course there are. But why shouldn’t I have a go at writing my own and seeing if I can build upon them and add a new twist.
+
+**What do I want to achieve?**
+
+Ultimately I would like to be able to load the resources for monkey island into the browser using HTML and interact with the game engine using requests to my elixir server. If that were possible, then surely it would also be possible to include co-operative (or at least spectator) play into Monkey Island using web sockets.
+
+**The big picture**
+
+Here are what I think are key aspects / ideas / considerations of the project to “webify™” Monkey Island
+
+* Parse resources for room and store in relevant data structure
+
+* Webify the resources so that room resources can be requested via URL through some Elixir Phoenix routing setup. I think this would include conversion of images to browser supported format and possibly sound conversion. Although I think the game music are MIDI files, so they might work as is to at least get the melody (even if the instruments are different)
+
+* Each room in the game includes costumes, costumes are the animations for the room and have their own DSL. It would be interesting to try and convert these to Javascript, although it would be nice to reduce the front end Javascript as much as possible and potentially control the animations via websockets (surely the payload would be small) and that way the application is written in the one language as much as possible.
+  *To be considered further once the spec is better understood.
+
+* Demo the “webification™” of the resources by creating a Phoenix application that is a resource browser for the game
+
+* Render a room for the game
+
+* There will be other quirks for the particular version of the scumm file format and these can be dealt with on an individual basis.
+
+**Is that really possible?**
+
+I have no idea, but would like to find out….
+
+**Credit**
+
+I am definitely standing on the shoulders of giants here and owe great credit to the following pages / projects in allowing me to even get a leg up on deciphering the contents of the Monkey Island disk images:
+
+* [ScummVM](https://www.scummvm.org/)
+
+* [Scumm Revisited](http://jsg.id.au/scumm/scummrev/specs/).
+
+I am sure there are other websites I have brushed past on my way, but these are the main ones. So a big shout out to those authors.
+
+**What is ScummVM?**
+
+Wikipedia has a very [detailed history](https://en.wikipedia.org/wiki/ScummVM) of the ScummVM. I know what ScummVM is and how it has contributed to a lot of my favourite adventure games as a kid, but I am by no means a Scumm-o-phile that knows all the ins and outs.
+
+**Lets get started…**
+
+I will be attempting to decode The Secret of Monkey Island EGA version. I figure since I am stepping back in time that I will use the EGA version rather than the VGA version. I know the graphics in the VGA version are better, but the EGA version reminds me of the days where I had a CGA computer and couldn’t play any of these games. I had to make friends with kids who had EGA or better. There was no other way!
+
+I aim for this to be a living document. I will document my steps as a series of posts, focussing on key milestones that I hit and what I have learnt.
+
+**Here is what I have learnt so far:**
+
+* [The index file](https://medium.com/@natewallis/794b53c9933f)
+
+* [Decoding Monkey Island resources](https://medium.com/@natewallis/monkey-island-resources-5ae95e7894fb)
+
+## The index file
+
+So I wasn’t really sure where to start when it came to reading the disk images. I had always assumed that all Scumm games used the same format. It didn’t take long to find out [that this is not the case](https://wiki.scummvm.org/index.php/SCUMM/Technical_Reference/Index_File#SCUMM_V3_and_V4).
+
+The disk images that I downloaded were for Monkey Island EGA version. Which is the first version of the game that I ever saw. I soon found out that there are different versions of the Scumm file format.
+
+The the first step was for me to figure out which version of the Scumm file format I was dealing with. Luckily [I found mention](https://wiki.scummvm.org/index.php/SCUMM/Technical_Reference/Index_File#SCUMM_V3_and_V4) that for version 4 the 5th or 6th byte of the file will contain the text “RN” or “OR”. So I opened the 000.lfl file to see what bytes it contained:
+
+<!-- livebook:{"break_markdown":true} -->
+
+![](files/byte_sequence.png)
+
+<!-- livebook:{"break_markdown":true} -->
+
+So I now knew I was dealing with version 4. Time to move on and try to get some data.
+
+I think this would be a good point for me to link to other knowledge I have gained while building this system . While I did have some experience working with binary data in the past, I wasn’t really familiar with how to deal with it in Elixir. Honestly, I got really confused when I first read the Elixir documentation on Binaries and Bitstrings. But upon re-reading the documentation, over and over and over, I managed to make more sense of it.
+
+*Note to self: write another article about what I have learned about Elixir Bitstrings and Binaries.*
+
+I wrote some pretty rough code (not yet refactored) that parsed the index file.
+
+<iframe src="https://medium.com/media/2cff99176e8b3bfbdca2d628a22a0b2c" frameborder="0">
+
+</iframe>
+
+All of the above worked and I was able to get data from the index file. Considering if I grabbed just one more byte from the file and I got
+
+```
+:eof
+```
+
+gave me some reassurance that I was at least grabbing the data in the correctly sized chunks. I wasn’t completely convinced about the endianness of some of the data that I was retrieving. Some of the documentation that I was reviewing about the Scumm file format contradicted itself on occasions (or maybe I misread it). But I figure I can always flip the bytes where required as I get deeper into the decoding of the files.
+
+It was actually pretty cool to be able to decode data from files and see text that resembled the room names of the game that I used to love playing. Encoded all those years ago. The code wasn’t pretty so I figured it was time to remove some of the repetition, mainly through recursive parsing of the file until the file position was equal to or greater than the length of the file size in bytes.
+
+Here is the dried code, it isn’t perfect, but it is much better:
+
+<iframe src="https://medium.com/media/6017c82cfad5131d9b3d297b0c0bbe12" frameborder="0">
+
+</iframe>
+
+It was nice to have a more succinct parsing routine. However, I still had no idea what any of the data meant. It is time for me to delve into the ScummVM C++ source and find the similarities with my code so I can figure out what to do next.
+
+Now I needed to figure out how to [decode some of the game resources](https://medium.com/@natewallis/monkey-island-resources-5ae95e7894fb)…
+
+```elixir
+defmodule FirstScummIndex do
+  defguard basic_block_type(value)
+           when value === "0R" or value === "0S" or value === "0N" or value === "0C"
+
+  def parse do
+    index_data = %{}
+    assets_file_pointer = File.open!("assets/000.lfl")
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+    block_meta_data = parse_block(assets_file_pointer)
+    block_contents = parse_block(block_meta_data, assets_file_pointer)
+    index_data = Map.merge(index_data, block_contents)
+    IO.binread(assets_file_pointer, 10)
+    index_data
+  end
+
+  def parse_block(assets_file_pointer) do
+    block_size =
+      assets_file_pointer
+      |> IO.binread(4)
+      |> Helpers.reverse_binary()
+      |> :binary.decode_unsigned()
+
+    block_type =
+      assets_file_pointer
+      |> IO.binread(2)
+
+    {block_size, block_type}
+  end
+
+  def parse_block({block_size, "RN"}, assets_file_pointer) do
+    # block data includes block size of 4 bytes, block type of 2 bytes and trailing null byte
+    # so 7 bytes in total, each room is 10 bytes in size.  This does not currently account fo
+    # a corrupt disk image
+    number_of_rooms =
+      ((block_size - 7) / 10)
+      |> trunc
+
+    room_data =
+      Enum.reduce(1..number_of_rooms, %{}, fn _, acc ->
+        room_number =
+          assets_file_pointer
+          |> IO.binread(1)
+          |> :binary.decode_unsigned()
+
+        room_name =
+          assets_file_pointer
+          |> IO.binread(9)
+          |> Helpers.xor(0xFF)
+
+        Map.put(acc, room_name, room_number)
+        Map.put(acc, room_number, room_name)
+      end)
+
+    # discard end of block null byte
+    :file.position(assets_file_pointer, block_size)
+    %{"rooms" => room_data}
+  end
+
+  def parse_block({_block_size, block_type}, assets_file_pointer)
+      when basic_block_type(block_type) do
+    number_of_items =
+      assets_file_pointer
+      |> IO.binread(2)
+      |> Helpers.reverse_binary()
+      |> :binary.decode_unsigned()
+
+    block_data =
+      Enum.reduce(1..number_of_items, %{}, fn _, acc ->
+        file_number =
+          assets_file_pointer
+          |> IO.binread(1)
+          |> Helpers.reverse_binary()
+          |> :binary.decode_unsigned()
+
+        offset =
+          assets_file_pointer
+          |> IO.binread(4)
+          |> Helpers.reverse_binary()
+          |> :binary.decode_unsigned()
+
+        Map.put(acc, file_number, offset)
+      end)
+
+    %{"scripts_data" => block_data}
+  end
+
+  def parse_block({_block_size, "0O"}, assets_file_pointer) do
+    number_of_items =
+      assets_file_pointer
+      |> IO.binread(2)
+      |> Helpers.reverse_binary()
+      |> :binary.decode_unsigned()
+
+    block_data =
+      Enum.reduce(1..number_of_items, %{}, fn _, acc ->
+        class_data =
+          assets_file_pointer
+          |> IO.binread(3)
+          # |> Helpers.reverse_binary
+          |> :binary.decode_unsigned()
+
+        owner_state =
+          assets_file_pointer
+          |> IO.binread(1)
+          |> :binary.decode_unsigned()
+
+        owner =
+          owner_state
+          |> Bitwise.band(0xF0)
+          |> Bitwise.>>>(4)
+
+        state = Bitwise.band(owner_state, 0x0F)
+        Map.put(acc, class_data, %{owner: owner, state: state})
+      end)
+
+    %{"room_directory" => block_data}
+  end
+end
+
+FirstScummIndex.parse()
+```
+
+```elixir
+defmodule DriedScummIndex do
+  defguard common_block_type(value)
+           when value === "0R" or value === "0S" or value === "0N" or value === "0C"
+
+  def parse do
+    File.open!("assets/000.lfl")
+    |> find_a_block(%{})
+  end
+
+  def find_a_block(assets_file_pointer, data_store) do
+    {:ok, current_cursor_position} = :file.position(assets_file_pointer, :cur)
+    %File.Stat{size: size} = File.stat!("assets/000.lfl")
+
+    if current_cursor_position < size do
+      block_meta_data = get_block_meta_data(assets_file_pointer)
+      data_store = Map.merge(data_store, parse_block(block_meta_data, assets_file_pointer))
+      find_a_block(assets_file_pointer, data_store)
+    else
+      data_store
+    end
+  end
+
+  defp get_block_meta_data(assets_file_pointer) do
+    block_size = Helpers.binread_reverse_decode(assets_file_pointer, 4)
+    block_type = IO.binread(assets_file_pointer, 2)
+    {block_size, block_type}
+  end
+
+  @spec parse_block({any, <<_::16>>}, atom | pid | {:file_descriptor, atom, any}) :: %{
+          optional(<<_::40, _::_*8>>) => any
+        }
+  def parse_block({block_size, "RN"}, assets_file_pointer) do
+    # block data includes block size of 4 bytes, block type of 2 bytes and trailing null byte
+    # so 7 bytes in total, each room is 10 bytes in size.  This does not currently account for
+    # a corrupt disk image
+    number_of_rooms = trunc((block_size - 7) / 10)
+
+    room_data =
+      Enum.reduce(1..number_of_rooms, %{}, fn _, acc ->
+        room_number = Helpers.binread_decode(assets_file_pointer, 1)
+
+        room_name =
+          assets_file_pointer
+          |> IO.binread(9)
+          |> Helpers.xor(0xFF)
+
+        Map.put(acc, room_name, room_number)
+        Map.put(acc, room_number, room_name)
+      end)
+
+    # discard end of block null byte
+    :file.position(assets_file_pointer, block_size)
+    %{"rooms" => room_data}
+  end
+
+  def parse_block({_, block_type}, assets_file_pointer) when common_block_type(block_type) do
+    number_of_items = Helpers.binread_reverse_decode(assets_file_pointer, 2)
+
+    block_data =
+      Enum.reduce(1..number_of_items, %{}, fn _, acc ->
+        file_number = Helpers.binread_reverse_decode(assets_file_pointer, 1)
+        offset = Helpers.binread_reverse_decode(assets_file_pointer, 4)
+        Map.put(acc, file_number, offset)
+      end)
+
+    %{"scripts_data" => block_data}
+  end
+
+  def parse_block({_, "0O"}, assets_file_pointer) do
+    number_of_items = Helpers.binread_reverse_decode(assets_file_pointer, 2)
+
+    block_data =
+      Enum.reduce(1..number_of_items, %{}, fn _, acc ->
+        class_data = Helpers.binread_decode(assets_file_pointer, 3)
+        owner_state = Helpers.binread_decode(assets_file_pointer, 1)
+        # extract the 4 bits for state and owner
+        owner =
+          owner_state
+          |> Bitwise.band(0xF0)
+          |> Bitwise.>>>(4)
+
+        state = Bitwise.band(owner_state, 0x0F)
+        Map.put(acc, class_data, %{owner: owner, state: state})
+      end)
+
+    %{"room_directory" => block_data}
+  end
+end
+
+DriedScummIndex.parse()
+```
+
+## Decoding Monkey Island resources
+
+In an effort to understand the data that I was parsing from the index file and to do it as quickly as possible, I needed to lean on the ScummVM source and find some common ground so I knew what I was looking at.
+
+There are a number of resource.cpp (with different versions) files located in the /engines/scumm folder in the ScummVM source that seemed to be doing the same thing as my [original index parsing attempt](https://medium.com/@natewallis/the-index-file-794b53c9933f). Seeing as there are so many versions of the index file, I needed to find the right one and I wasn’t convinced that it was a simple one for one match up between the version numbers of the C++ files and the version numbers mentioned in the [ScummVM techical reference](https://wiki.scummvm.org/index.php/SCUMM/Technical_Reference/Index_File#SCUMM_V0.2C_V1_and_V2).
+
+It looks like the ScummVM source file that matches up with the index file parsing is located at /engines/scumm/resource_v4.cpp where they use a similar method of iterating the file in chunks. It looks like they iterate the file once and get the total number of scripts, costumes, rooms etc and store those in variables. Then seek back to the start of the file and iterate the data in the same way that my current elixir code does.
+
+It looks like they will then iterate these data structures at a later date to retrieve information for each room, however I think we can improve here and store the information in structs for each room now so that future collation does not need to happen.
+
+More to come…
