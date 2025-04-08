@@ -26,14 +26,14 @@ defmodule HelpersTest do
   describe "binread_decode/2" do
     test "reads and decodes binary as unsigned int" do
       {:ok, file} = StringIO.open(<<0x01, 0x00>>)
-      assert Helpers.binread_decode(file, 2) == 256
+      assert Helpers.binread_decode(file, 2) == 0b0000000100000000
     end
   end
 
   describe "binread_reverse_decode/2" do
     test "reads, reverses, and decodes binary" do
       {:ok, file} = StringIO.open(<<0x01, 0x00>>)
-      assert Helpers.binread_reverse_decode(file, 2) == 1
+      assert Helpers.binread_reverse_decode(file, 2) == 0b0000000000000001
     end
   end
 
