@@ -90,7 +90,7 @@ The the first step was for me to figure out which version of the Scumm file form
 
 So I now knew I was dealing with version 4. Time to move on and try to get some data.
 
-I think this would be a good point for me to link to other knowledge I have gained while building this system . While I did have some experience working with binary data in the past, I wasn’t really familiar with how to deal with it in Elixir. Honestly, I got really confused when I first read the Elixir documentation on Binaries and Bitstrings. But upon re-reading the documentation, over and over and over, I managed to make more sense of it.
+I think this would be a good point for me to link to other knowledge I have gained while building this system . While I did have some experience working with binary data in the past, I wasn’t really familiar with how to deal with it in Elixir. Honestly, I got really confused when I first read the Elixir documentation on Binaries and Bitstrings. But upon re-reading the documentation, I managed to make more sense of it.
 
 *Note to self: write another article about what I have learned about Elixir Bitstrings and Binaries.*
 
