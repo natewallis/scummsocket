@@ -127,7 +127,7 @@ defmodule FirstScummIndex do
 
   def parse do
     index_data = %{}
-    assets_file_pointer = File.open!("assets/000.lfl")
+    assets_file_pointer = File.open!("#{__DIR__}/assets/000.lfl")
     block_meta_data = parse_block(assets_file_pointer)
     block_contents = parse_block(block_meta_data, assets_file_pointer)
     index_data = Map.merge(index_data, block_contents)
@@ -263,13 +263,13 @@ defmodule DriedScummIndex do
            when value === "0R" or value === "0S" or value === "0N" or value === "0C"
 
   def parse do
-    File.open!("assets/000.lfl")
+    File.open!("#{__DIR__}/assets/000.lfl")
     |> find_a_block(%{})
   end
 
   def find_a_block(assets_file_pointer, data_store) do
     {:ok, current_cursor_position} = :file.position(assets_file_pointer, :cur)
-    %File.Stat{size: size} = File.stat!("assets/000.lfl")
+    %File.Stat{size: size} = File.stat!("#{__DIR__}/assets/000.lfl")
 
     if current_cursor_position < size do
       block_meta_data = get_block_meta_data(assets_file_pointer)
