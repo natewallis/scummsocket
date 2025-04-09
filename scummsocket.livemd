@@ -64,15 +64,7 @@ Wikipedia has a very [detailed history](https://en.wikipedia.org/wiki/ScummVM) o
 
 **Lets get started…**
 
-I will be attempting to decode The Secret of Monkey Island EGA version. I figure since I am stepping back in time that I will use the EGA version rather than the VGA version. I know the graphics in the VGA version are better, but the EGA version reminds me of the days where I had a CGA computer and couldn’t play any of these games. I had to make friends with kids who had EGA or better. There was no other way!
-
-I aim for this to be a living document. I will document my steps as a series of posts, focussing on key milestones that I hit and what I have learnt.
-
-**Here is what I have learnt so far:**
-
-* [The index file](https://medium.com/@natewallis/794b53c9933f)
-
-* [Decoding Monkey Island resources](https://medium.com/@natewallis/monkey-island-resources-5ae95e7894fb)
+I will be attempting to decode The Secret of Monkey Island EGA version. I figure since I am stepping back in time that I will use the EGA version rather than the VGA version. I know the graphics in the VGA version are better, but the EGA version reminds me of the days where I had a CGA computer and couldn’t play any of these games. Friendships were usually determined by who had an EGA (or better) graphics card 😉.
 
 ## The index file
 
@@ -99,26 +91,6 @@ I wrote some pretty rough code (not yet refactored) that parsed the index file.
 <iframe src="https://medium.com/media/2cff99176e8b3bfbdca2d628a22a0b2c" frameborder="0">
 
 </iframe>
-
-All of the above worked and I was able to get data from the index file. Considering if I grabbed just one more byte from the file and I got
-
-```
-:eof
-```
-
-gave me some reassurance that I was at least grabbing the data in the correctly sized chunks. I wasn’t completely convinced about the endianness of some of the data that I was retrieving. Some of the documentation that I was reviewing about the Scumm file format contradicted itself on occasions (or maybe I misread it). But I figure I can always flip the bytes where required as I get deeper into the decoding of the files.
-
-It was actually pretty cool to be able to decode data from files and see text that resembled the room names of the game that I used to love playing. Encoded all those years ago. The code wasn’t pretty so I figured it was time to remove some of the repetition, mainly through recursive parsing of the file until the file position was equal to or greater than the length of the file size in bytes.
-
-Here is the dried code, it isn’t perfect, but it is much better:
-
-<iframe src="https://medium.com/media/6017c82cfad5131d9b3d297b0c0bbe12" frameborder="0">
-
-</iframe>
-
-It was nice to have a more succinct parsing routine. However, I still had no idea what any of the data meant. It is time for me to delve into the ScummVM C++ source and find the similarities with my code so I can figure out what to do next.
-
-Now I needed to figure out how to [decode some of the game resources](https://medium.com/@natewallis/monkey-island-resources-5ae95e7894fb)…
 
 ```elixir
 defmodule FirstScummIndex do
@@ -257,6 +229,22 @@ end
 FirstScummIndex.parse()
 ```
 
+All of the above worked and I was able to get data from the index file. Considering if I grabbed just one more byte from the file and I got
+
+```
+:eof
+```
+
+gave me some reassurance that I was at least grabbing the data in the correctly sized chunks. I wasn’t completely convinced about the endianness of some of the data that I was retrieving. Some of the documentation that I was reviewing about the Scumm file format contradicted itself on occasions (or maybe I misread it). But I figure I can always flip the bytes where required as I get deeper into the decoding of the files.
+
+It was actually pretty cool to be able to decode data from files and see text that resembled the room names of the game that I used to love playing. Encoded all those years ago. The code wasn’t pretty so I figured it was time to remove some of the repetition, mainly through recursive parsing of the file until the file position was equal to or greater than the length of the file size in bytes.
+
+Here is the dried code, it isn’t perfect, but it is much better:
+
+<iframe src="https://medium.com/media/6017c82cfad5131d9b3d297b0c0bbe12" frameborder="0">
+
+</iframe>
+
 ```elixir
 defmodule DriedScummIndex do
   defguard common_block_type(value)
@@ -349,6 +337,10 @@ end
 
 DriedScummIndex.parse()
 ```
+
+It was nice to have a more succinct parsing routine. However, I still had no idea what any of the data meant. It is time for me to delve into the ScummVM C++ source and find the similarities with my code so I can figure out what to do next.
+
+Now I needed to figure out how to decode some of the game resources
 
 ## Decoding Monkey Island resources
 
